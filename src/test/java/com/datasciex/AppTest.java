@@ -1,4 +1,4 @@
-package com.tom.student;
+package com.datasciex;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

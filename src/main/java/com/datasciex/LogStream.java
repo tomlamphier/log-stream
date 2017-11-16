@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.tom.student;
+package com.datasciex;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.*;

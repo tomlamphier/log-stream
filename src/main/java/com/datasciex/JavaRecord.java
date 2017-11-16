@@ -1,4 +1,4 @@
-package com.tom.student;
+package com.datasciex;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
