@@ -37,8 +37,8 @@ public final class LogStream {
   }
 
   public static void main(String[] args) throws Exception {
-    if (args.length != 2) {
-      System.err.println("Usage: LogStream <host> <port>");
+    if (args.length != 3) {
+      System.err.println("Usage: LogStream <host> <port> <path-to-jar");
       System.exit(1);
     }
 
@@ -53,10 +53,11 @@ public final class LogStream {
 
     String host = args[0];
     int port = Integer.parseInt(args[1]);
+    String pathToJar = args[2];
 
     Duration batchInterval = new Duration(60000);
     SparkConf sparkConf = new SparkConf().setAppName("LogStream")
-        .setMaster("spark://ip-10-0-0-54.ec2.internal:7077");
+        .setMaster("local[2]");
     JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, batchInterval);
     JavaReceiverInputDStream<SparkFlumeEvent> flumeStream =
       FlumeUtils.createStream(ssc, host, port);
@@ -66,7 +67,7 @@ public final class LogStream {
 
  // Convert RDDs of the words DStream to DataFrame and run SQL query
     windowLines.foreachRDD((rdd, time) -> {
-    SparkSession spark = JavaSparkSessionSingleton.getInstance(rdd.context().getConf());
+    SparkSession spark = JavaSparkSessionSingleton.getInstance(rdd.context().getConf(), pathToJar);
       // Convert JavaRDD[String] to JavaRDD[bean class] to DataFrame
       JavaRDD<JavaRecord> rowRDD = rdd.map(line -> {
         JavaRecord record = new JavaRecord();
@@ -109,13 +110,13 @@ public final class LogStream {
 /** Lazily instantiated singleton instance of SparkSession */
 class JavaSparkSessionSingleton {
   private static transient SparkSession instance = null;
-  public static SparkSession getInstance(SparkConf sparkConf) {
+  public static SparkSession getInstance(SparkConf sparkConf, String pathToJar) {
     if (instance == null) {
       instance = SparkSession
         .builder()
         //.config(sparkConf)
         .appName("LogStream")
-        .config("spark.jars", "/home/ec2-user/maven-projects/logStream/target/logStream.jar")
+        .config("spark.jars", pathToJar)
         .getOrCreate();
     }
     return instance;
