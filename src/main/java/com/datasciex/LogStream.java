@@ -52,6 +52,7 @@ public final class LogStream {
 
     String host = args[0];
     int port = Integer.parseInt(args[1]);
+    long rddCount = 0;
 
     Jedis jedis = new Jedis("localhost");
     JavaSparkContext sc = new JavaSparkContext();
@@ -76,14 +77,17 @@ public final class LogStream {
 
         Dataset<Row> ipCounts = ss.sql("select ip, requestUri, count(*) as ctr "
           + "from logrecs where requestUri like 'POST%' group by ip, requestUri having count(*) > 5");
-        System.out.println("ipCounts count = " + ipCounts.count());
         List<Row> rows = ipCounts.collectAsList();
-        for (Row r: rows) {
-          String ipKey = r.getString(0);
-          if (!jedis.exists(ipKey)) {
-            jedis.set(ipKey, "T");
-          }
-        }
+        ++rddCount;  // first few RDD's will be discarded because they will contain entire log file.
+                     // We only want to monitor the current stream.
+        if (rddCount > 10) {
+            for (Row r: rows) {
+              String ipKey = r.getString(0);
+              if (!jedis.exists(ipKey)) {
+                jedis.set(ipKey, "T");
+              }
+            }
+        }  
       }
     });
 
