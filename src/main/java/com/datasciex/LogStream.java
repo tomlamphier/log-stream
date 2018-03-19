@@ -83,6 +83,7 @@ public final class LogStream {
             jedis.set(ipKey, "T");
           }
         }
+      }
     });
 
     strCxt.start();
